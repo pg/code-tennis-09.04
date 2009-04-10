@@ -3,18 +3,22 @@
 //  Match1
 //
 //  Created by Jeff Stieler on 4/2/09.
-//  Copyright 2009 __MyCompanyName__. All rights reserved.
+//  Copyright 2009 VolleyApps. All rights reserved.
 //
 
 #import <Cocoa/Cocoa.h>
+#import <PubSub/PubSub.h>
 
 
 @interface AppController : NSObject {
 	IBOutlet NSButton *goButton;
-	IBOutlet NSTextField *textField;
-	NSArray *responses;
+	IBOutlet NSPopUpButton *popupButton;
 	NSSpeechSynthesizer *speechSynth;
+	NSDictionary *feedDictionary;
+	NSURL *feedURL;
+	PSFeed *feed;
+	PSClient *client;
 }
-- (IBAction)giveMagicEightBallAnswer:(id)sender;
+- (IBAction)readFeedAloud:(id)sender;
 
 @end

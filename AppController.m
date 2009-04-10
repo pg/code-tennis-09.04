@@ -3,7 +3,7 @@
 //  Match1
 //
 //  Created by Jeff Stieler on 4/2/09.
-//  Copyright 2009 __MyCompanyName__. All rights reserved.
+//  Copyright 2009 VolleyApps. All rights reserved.
 //
 
 #import "AppController.h"
@@ -14,11 +14,7 @@
 - (id)init {
 	[super init];
 	NSLog(@"init AppController");
-	
-	// Seed the random number generator
-	srandom(time(NULL));
-	NSLog(@"random num gen seeded");
-	
+		
 	// Create instance of NSSpeechSynthesizer with the default voice
 	speechSynth = [[NSSpeechSynthesizer alloc] initWithVoice:nil];
 	// Pete: gotta set the delegate of the NSSpeechSynthesize to self so it calls the
@@ -26,40 +22,54 @@
 	[speechSynth setDelegate:self];
 	NSLog(@"init NSSpeechSynth");
 	
-	// Setup the 8-Ball responses array (Sourced from the mighty Wikipedia)
-	responses = [[NSArray alloc] initWithObjects:@"As I see it, yes.", @"It is certain.", 
-				 @"It is decidedly so.", @"Most likely.", @"Outlook good.", @"Signs point to yes.", 
-				 @"Without a doubt.", @"Yes.", @"Yes - definitely.", @"You may rely on it.", 
-				 @"Reply hazy, try again.", @"Ask again later.", @"Better not tell you now.", 
-				 @"Cannot predict now.", @"Concentrate and ask again.", @"Don't count on it.", 
-				 @"My reply is no.", @"My sources say no.", @"Outlook not so good.", 
-				 @"Very doubtful.", nil];
-	NSLog(@"set 8-Ball responses");
+	// Build list of feeds (hard-coded for now, unfortunately)
+	NSArray *feedNames = [NSArray arrayWithObjects:@"Hacker News", @"MacRumors", nil];	
+	NSArray *feedURLs = [NSArray arrayWithObjects:@"http://news.ycombinator.com/rss", @"http://www.macrumors.com/macrumors.xml", nil];	
+	feedDictionary = [NSDictionary dictionaryWithObjects:feedURLs forKeys:feedNames];
+	NSLog(@"init Feed Dictionary");
+	
+	client = [PSClient applicationClient];
+	
+	// TODO: Add feed names to popupButton
+	//[popupButton addItemsWithTitles:feedNames];	
+	//NSLog(@"init Names added to popupButton");
+
 	return self;
 }
 
-- (IBAction)giveMagicEightBallAnswer:(id)sender {
+- (IBAction)readFeedAloud:(id)sender {
 	NSLog(@"button clicked");
 	
-	// Pick a random string from responses array
-	int rand = random() % [responses count];
-	NSString *response = [responses objectAtIndex:rand];
-	NSLog(@"Chose response #%d - %@", rand, response);
+	// TODO: Use something like this to grab the URL from the popupButton list, 
+	//       but I couldn't seem to get the objectForKey method to work.
+	//NSString *str = [feedDictionary objectForKey:[popupButton titleOfSelectedItem]];	
+	//NSLog(@"feedDictionary objectForKey - %@", str);
 	
-	// Set the label text
-	[textField setStringValue:response];
+	// Grab feed from selected URL
+	feedURL = [NSURL URLWithString:@"http://news.ycombinator.com/rss"];	
+	NSLog(@"Selected feed URL - %@", feedURL);
 	
-	// Send the response to the speech synth
-	[speechSynth startSpeakingString:response];
-	NSLog(@"Have started to say: %@", response);
+	feed = [client addFeedWithURL:feedURL];
+	NSLog(@"Feed added - %@", feedURL-);
+	
+	// Go through entries in feed
+	NSEnumerator * entries = [feed entryEnumeratorSortedBy: nil];
+	PSEntry *entry;
+	
+	// TODO: Control entry processing rate to give time for speaking (use didFinishSpeaking delegate?)
+	while(entry = [entries nextObject]) {
+		// Send the entry to the speech synth
+		[speechSynth startSpeakingString:entry.title];
+		NSLog(@"Entry Title:%@", entry.title);
+	}	
+		
 	[goButton setEnabled:NO];
-	[response release];
+	//[feed release];
 }
 
 - (void)speechSynthesizer:(NSSpeechSynthesizer *)sender 
 		didFinishSpeaking:(BOOL)complete {
 	NSLog(@"speaking complete = %d", complete);
-	[textField setStringValue:@""];
 	[goButton setEnabled:YES];
 }
 
